@@ -1,0 +1,11 @@
+[Package]
+name: "glossolalia"
+version: "1.0"
+author: "fowl"
+description: "A DSL to quickly write parsers"
+license: "CC0"
+
+srcDir: "src"
+
+[Deps]
+requires: "nimrod > 0.9.2"
