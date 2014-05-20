@@ -1,7 +1,7 @@
 ## example json parser
 ## TODO comply with json standard
 ## (ECMA-404)
-import glossolalia, json
+import glossolalia_v3, json
 export json.`$`, PJsonNode, TJsonNodeKind, json.`[]`, json.`[]=`, 
   new_j_array, new_j_bool, new_j_string, new_j_null, new_j_object,
   new_j_int, new_j_float, has_key, pretty, json.`%`,len
