@@ -25,21 +25,24 @@
 import 
   strutils,
   fowltek/maybe_t
+export
+  strutils,
+  maybe_t
 
 type
   TInput* = object
-    str: string
-    len,pos: int
+    str*: string
+    len*,pos*: int
   
   TMatchKind* = enum mUnrefined, mString, mNodes
   TMatch*[N] = object
     case kind*: TMatchKind
     of mUnrefined:
-      pos, len: int
+      pos*, len*: int
     of mString:
-      str: string
+      str*: string
     of mNodes:
-      nodes: seq[N]
+      nodes*: seq[N]
 
   TMatchResult* [N] = TMaybe[TMatch[N]]
   Rule* [N] = ref object
@@ -97,7 +100,7 @@ proc strMatcher* [N] (str: string): Rule[N] =
         input.pos.inc str.len 
   )
 
-proc accumulate [N] (matches: varargs[TMatch[N]]): TMatch[N] =
+proc accumulate [N] (matches: varargs[TMatch[N]]): TMatchResult[N] =
   # saves positive matches by joining arrays of 
   # saved AST nodes or concatenating raw strings 
   assert matches.len > 0
@@ -106,19 +109,19 @@ proc accumulate [N] (matches: varargs[TMatch[N]]): TMatch[N] =
   var found_nodes = false
   for it in matches:
     if it.kind == mNodes:
-      if result.kind != mNodes:
-        result = TMatch[N](kind: mNodes, nodes: it.nodes)
+      if result.val.kind != mNodes:
+        result = just(TMatch[N](kind: mNodes, nodes: it.nodes))
         found_nodes = true
       else:
-        result.nodes.add it.nodes
+        result.val.nodes.add it.nodes
   if found_nodes: return
 
   #all strings, add up the captures
-  result = TMatch[N](kind: mUnrefined, pos: matches[0].pos)
-  var high = result.pos + matches[0].len
+  result = just(TMatch[N](kind: mUnrefined, pos: matches[0].pos))
+  var high = result.val.pos + matches[0].len
   for i in 1 .. <len(matches):
     high = max(matches[i].pos + matches[i].len, high)
-  result.len = high - result.pos
+  result.val.len = high - result.val.pos
 
 
 proc `and`* [N] (a,b: Rule[N]): Rule[N] =
@@ -127,7 +130,7 @@ proc `and`* [N] (a,b: Rule[N]): Rule[N] =
       let start = input.pos
       if (let (has,m1) = a.m(input); has):
         if (let (has,m2) = b.m(input); has):
-          result = just(accumulate(m1, m2))
+          result = accumulate(m1, m2)
           return
       input.pos = start
   )
@@ -143,6 +146,9 @@ proc `or`* [N] (a,b: Rule[N]): Rule[N] =
         return just(m)
       input.pos = start
   )
+
+proc `&` * [N] (a,b:Rule[N]): Rule[N] {.inline.} = a and b
+proc `|` * [N] (a,b:Rule[N]): Rule[N] {.inline.} = a or b
 
 proc present* [N] (R:Rule[N]): Rule[N] =
   Rule[N](
@@ -187,7 +193,7 @@ proc repeat* [N] (R:Rule[N]; min,max:int): Rule[N] =
         #result = match_fail
       else:
         if matches > 0:
-          result = just(accumulate(results))
+          result = accumulate(results)
         else:
           result = good_match[n](input,0)
   )
@@ -212,7 +218,7 @@ proc repeat* [N] (R:Rule[N]; min:int): Rule[N] =
         #result = match_fail
       else:
         if matches > 0:
-          result = just(accumulate(results))
+          result = accumulate(results)
         else:
           result = good_match[n](input,0)
   )
@@ -220,7 +226,13 @@ proc `+`* [N] (R:Rule[N]): Rule[N] = R.repeat(1)
 proc `*`* [N] (R:Rule[N]): Rule[N] = R.repeat(0)
 proc `?`* [N] (R:Rule[N]): Rule[N] = R.repeat(0,1)
 
-proc high [N] (match: TMatch[N]): int = match.pos + match.len - 1
+proc join* [N] (r, on: Rule[N]; min,max = 0): Rule[N] =
+  # Join a rule on another rule in the sequence (r & (on & r).repeat(min,max))
+  #  `on & r` must repeat `min` times
+  #  `max` may be 0 to match forever
+  r & (if max > 0: (on & r).repeat(min,max) else: (on & r).repeat(min))
+
+proc high_pos* [N] (match: TMatch[N]): int = match.pos + match.len - 1
 
 proc save* [N] (R:Rule[N]; cb: proc(match:string): N): Rule[N] =
   # store a string as an `N`
@@ -230,7 +242,7 @@ proc save* [N] (R:Rule[N]; cb: proc(match:string): N): Rule[N] =
       result = r.m(input)
       if result.has and result.val.kind == mUnrefined:
         result = good_match[n](
-          cb(input.str.substr(result.val.pos, result.val.high))
+          cb(input.str.substr(result.val.pos, result.val.high_pos))
         )
   )
 proc save* [N] (R:Rule[N]; cb: proc(match: seq[N]): N): Rule[N] =
@@ -241,6 +253,7 @@ proc save* [N] (R:Rule[N]; cb: proc(match: seq[N]): N): Rule[N] =
       if result.has and result.val.kind == mNodes:
         result = good_match[n](cb(result.val.nodes))
   )
+
 
 proc match* [N] (rule:Rule[N]; str:string): TMatchResult[N] =
   var input = TInput(str: str, pos: 0, len: str.len)
