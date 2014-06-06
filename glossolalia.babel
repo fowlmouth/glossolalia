@@ -8,4 +8,4 @@ license: "CC0"
 srcDir: "src"
 
 [Deps]
-requires: "nimrod > 0.9.2"
+requires: "nimrod > 0.9.2, fowltek >= 0.9.3"
