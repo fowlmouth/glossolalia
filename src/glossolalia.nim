@@ -23,10 +23,10 @@
 ##     str(), chr() 
 ##
 import 
-  strutils,
+  strutils, future,
   fowltek/maybe_t
 export
-  strutils,
+  strutils, future,
   maybe_t
 
 type
@@ -253,6 +253,24 @@ proc save* [N] (R:Rule[N]; cb: proc(match: seq[N]): N): Rule[N] =
       if result.has and result.val.kind == mNodes:
         result = good_match[n](cb(result.val.nodes))
   )
+
+proc maybe_match [N] (node: N): TMatchResult[N] =
+  if maybe node:
+    return good_match[n](node)
+
+proc save* [N] (R:Rule[N]; cb: proc(start:cstring,len:int):N): Rule[N] =
+  Rule[N](
+    m: matchf do:
+      result = R.m(input)
+      if result.has and result.val.kind == mUnrefined:
+        # extra safety guard, TODO put this in other save() funcs
+        result = maybe_match(
+          cb(input.str[result.val.pos].addr, result.val.len)
+        )
+  )
+proc saveNodesOrBlank* [N] (R:Rule[N]; cb: proc(nodes:seq[N]):N): Rule[N] = 
+  R.save(cb).save do (start:cstring,len:int)->N:
+    if len == 0:return cb(@[])
 
 
 proc match* [N] (rule:Rule[N]; str:string): TMatchResult[N] =
