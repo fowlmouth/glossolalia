@@ -239,7 +239,7 @@ a.reference:hover {color: #E00000;background-color: #ffff00;display: margin;
 <body>
 <div class="document" id="documentId">
 <h1 class="title">Index</h1>
-Modules: <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_v2.html">glossolalia_v2</a>, <a href="glossolalia_v3.html">glossolalia_v3</a>, <a href="xjson.html">xjson</a>.<br><p /><h2>API symbols</h2>
+Modules: <a href="glossolalia.html">glossolalia</a>, <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_v2.html">glossolalia_v2</a>, <a href="glossolalia_v3.html">glossolalia_v3</a>, <a href="xjson.html">xjson</a>.<br><p /><h2>API symbols</h2>
 <dt><span>`!`:</span></dt><ul class="simple"><dd>
 <li><a class="reference external" href="src/glossolalia_v1.html#!,Rule">glossolalia_v1 : `!`(R: Rule): Rule</a></li>
           </ul></dd>
@@ -249,36 +249,49 @@ Modules: <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_
           <li><a class="reference external" href="src/glossolalia_v3.html#$,TPositiveMatch[N]">glossolalia_v3 : `$`[N](m: TPositiveMatch[N]): string</a></li>
           </ul></dd>
 <dt><span>`&amp;`:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#&,Rule,Rule">glossolalia_v1 : `&amp;`(a, b: Rule): Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#&,Rule[N],Rule[N]">glossolalia : `&amp;`[N](a, b: Rule[N]): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#&,Rule,Rule">glossolalia_v1 : `&amp;`(a, b: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v2.html#&,Rule,Rule">glossolalia_v2 : `&amp;`(A, B: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#&,Rule[N],Rule[N]">glossolalia_v3 : `&amp;`[N](A, B: Rule[N]): Rule[N]</a></li>
           </ul></dd>
 <dt><span>`*`:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#*,Rule">glossolalia_v1 : `*`(R: Rule): Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#*,Rule[N]">glossolalia : `*`[N](R: Rule[N]): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#*,Rule">glossolalia_v1 : `*`(R: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v2.html#*,Rule">glossolalia_v2 : `*`(R: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#*,Rule[N]">glossolalia_v3 : `*`[N](R: Rule[N]): Rule[N]</a></li>
           </ul></dd>
 <dt><span>`+`:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#+,Rule">glossolalia_v1 : `+`(rule: Rule): Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#+,Rule[N]">glossolalia : `+`[N](R: Rule[N]): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#+,Rule">glossolalia_v1 : `+`(rule: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v2.html#+,Rule">glossolalia_v2 : `+`(R: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#+,Rule[N]">glossolalia_v3 : `+`[N](R: Rule[N]): Rule[N]</a></li>
           </ul></dd>
 <dt><span>`:=`:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#:=,Rule,Rule">glossolalia_v1 : `:=`(a, b: Rule)</a></li>
+<li><a class="reference external" href="src/glossolalia.html#:=,Rule[N],Rule[N]">glossolalia : `:=`[N](a, b: Rule[N])</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#:=,Rule,Rule">glossolalia_v1 : `:=`(a, b: Rule)</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#:=,Rule[N],Rule[N]">glossolalia_v3 : `:=`[N](a, b: Rule[N])</a></li>
           </ul></dd>
 <dt><span>`?`:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#?,Rule">glossolalia_v1 : `?`(R: Rule): Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#?,Rule[N]">glossolalia : `?`[N](R: Rule[N]): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#?,Rule">glossolalia_v1 : `?`(R: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v2.html#?,Rule">glossolalia_v2 : `?`(R: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#?,Rule[N]">glossolalia_v3 : `?`[N](R: Rule[N]): Rule[N]</a></li>
           </ul></dd>
+<dt><span>`and`:</span></dt><ul class="simple"><dd>
+<li><a class="reference external" href="src/glossolalia.html#and,Rule[N],Rule[N]">glossolalia : `and`[N](a, b: Rule[N]): Rule[N]</a></li>
+          </ul></dd>
+<dt><span>`or`:</span></dt><ul class="simple"><dd>
+<li><a class="reference external" href="src/glossolalia.html#or,Rule[N],Rule[N]">glossolalia : `or`[N](a, b: Rule[N]): Rule[N]</a></li>
+          </ul></dd>
 <dt><span>`|`:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#|,Rule,Rule">glossolalia_v1 : `|`(a, b: Rule): Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#|,Rule[N],Rule[N]">glossolalia : `|`[N](a, b: Rule[N]): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#|,Rule,Rule">glossolalia_v1 : `|`(a, b: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v2.html#|,Rule,Rule">glossolalia_v2 : `|`(A, B: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#|,Rule[N],Rule[N]">glossolalia_v3 : `|`[N](A, B: Rule[N]): Rule[N]</a></li>
           </ul></dd>
 <dt><span>absent:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#absent,Rule">glossolalia_v1 : absent(R: Rule): Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#absent,Rule[N]">glossolalia : absent[N](R: Rule[N]): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#absent,Rule">glossolalia_v1 : absent(R: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#absent,Rule[N]">glossolalia_v3 : absent[N](R: Rule[N]): Rule[N]</a></li>
           </ul></dd>
 <dt><span>accum_repeat:</span></dt><ul class="simple"><dd>
@@ -295,7 +308,9 @@ Modules: <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_
 <li><a class="reference external" href="src/glossolalia_v1.html#brackets">glossolalia_v1 : brackets</a></li>
           </ul></dd>
 <dt><span>charMatcher:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v3.html#charMatcher,set[char]">glossolalia_v3 : charMatcher[N](chars: set[char]): Rule[N]</a></li>
+<li><a class="reference external" href="src/glossolalia.html#charMatcher,set[char]">glossolalia : charMatcher[N](chrs: set[char]): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia.html#charMatcher,varargs[char]">glossolalia : charMatcher[N](chrs: varargs[char]): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v3.html#charMatcher,set[char]">glossolalia_v3 : charMatcher[N](chars: set[char]): Rule[N]</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#charMatcher,varargs[char]">glossolalia_v3 : charMatcher[N](chars: varargs[char]): Rule[N]</a></li>
           </ul></dd>
 <dt><span>chr:</span></dt><ul class="simple"><dd>
@@ -308,18 +323,24 @@ Modules: <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_
 <li><a class="reference external" href="src/glossolalia_v1.html#comma_list,Rule,int">glossolalia_v1 : comma_list(r: Rule; min = 0; max = - 1): Rule</a></li>
           </ul></dd>
 <dt><span>currentChar:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v2.html#currentChar,TInput">glossolalia_v2 : currentChar(input: TInput): char</a></li>
+<li><a class="reference external" href="src/glossolalia.html#currentChar,TInput">glossolalia : currentChar(I: TInput): char</a></li>
+          <li><a class="reference external" href="src/glossolalia_v2.html#currentChar,TInput">glossolalia_v2 : currentChar(input: TInput): char</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#currentChar,TInput">glossolalia_v3 : currentChar(input: TInput): char</a></li>
           </ul></dd>
 <dt><span>grammar:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#grammar.m,expr,stmt">glossolalia_v1 : grammar(name: expr; body: stmt): stmt</a></li>
+<li><a class="reference external" href="src/glossolalia.html#grammar.t,expr,stmt">glossolalia : grammar(TNode: expr; body: stmt): stmt</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#grammar.m,expr,stmt">glossolalia_v1 : grammar(name: expr; body: stmt): stmt</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#grammar.t,expr,stmt">glossolalia_v3 : grammar(TNode: expr; body: stmt): stmt</a></li>
           </ul></dd>
 <dt><span>high:</span></dt><ul class="simple"><dd>
 <li><a class="reference external" href="src/glossolalia_v2.html#high,TInput">glossolalia_v2 : high(i: TInput): int</a></li>
           </ul></dd>
+<dt><span>high_pos:</span></dt><ul class="simple"><dd>
+<li><a class="reference external" href="src/glossolalia.html#high_pos,TMatch[N]">glossolalia : high_pos[N](match: TMatch[N]): int</a></li>
+          </ul></dd>
 <dt><span>join:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#join,Rule,Rule,int">glossolalia_v1 : join(r, on: Rule; min = 0; max = - 1): Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#join,Rule[N],Rule[N],int,int">glossolalia : join[N](r, on: Rule[N]; min, max = 0): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#join,Rule,Rule,int">glossolalia_v1 : join(r, on: Rule; min = 0; max = - 1): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#join,Rule[N],Rule[N],int,int">glossolalia_v3 : join[N](r, on: Rule[N]; min, max = 0): Rule[N]</a></li>
           </ul></dd>
 <dt><span>keyword:</span></dt><ul class="simple"><dd>
@@ -329,7 +350,8 @@ Modules: <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_
 <li><a class="reference external" href="src/glossolalia_v1.html#many,Rule">glossolalia_v1 : many(R: Rule): Rule</a></li>
           </ul></dd>
 <dt><span>match:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#match,Rule,string">glossolalia_v1 : match(R: Rule; S: string): TMaybe[string]</a></li>
+<li><a class="reference external" href="src/glossolalia.html#match,Rule[N],string">glossolalia : match[N](rule: Rule[N]; str: string): TMatchResult[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#match,Rule,string">glossolalia_v1 : match(R: Rule; S: string): TMaybe[string]</a></li>
           <li><a class="reference external" href="src/glossolalia_v2.html#match,Rule,string">glossolalia_v2 : match(R: Rule; str: string): TMatchResult</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#match,Rule[N],string">glossolalia_v3 : match[N](R: Rule[N]; input: string): TMaybe[N]</a></li>
           </ul></dd>
@@ -343,7 +365,8 @@ Modules: <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_
 <li><a class="reference external" href="src/parsers/xjson.html#new_j_array,openArray[PJsonNode]">xjson : new_j_array(elems: openArray[PJsonNode]): PJsonNode</a></li>
           </ul></dd>
 <dt><span>newRule:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#newRule,">glossolalia_v1 : newRule(): Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#newRule,">glossolalia : newRule[N](): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#newRule,">glossolalia_v1 : newRule(): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v1.html#newRule,TMatcher">glossolalia_v1 : newRule(matcher: TMatcher): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#newRule,">glossolalia_v3 : newRule[N](): Rule[N]</a></li>
           </ul></dd>
@@ -357,14 +380,17 @@ Modules: <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_
 <li><a class="reference external" href="src/parsers/xjson.html#parseJson,string">xjson : parseJson(doc: string): PJsonNode</a></li>
           </ul></dd>
 <dt><span>present:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#present,Rule">glossolalia_v1 : present(R: Rule): Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#present,Rule[N]">glossolalia : present[N](R: Rule[N]): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#present,Rule">glossolalia_v1 : present(R: Rule): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#present,Rule[N]">glossolalia_v3 : present[N](R: Rule[N]): Rule[N]</a></li>
           </ul></dd>
 <dt><span>raw_match:</span></dt><ul class="simple"><dd>
 <li><a class="reference external" href="src/glossolalia_v3.html#raw_match,Rule[N],string">glossolalia_v3 : raw_match[N](R: Rule[N]; input: string): TMatchResult[N]</a></li>
           </ul></dd>
 <dt><span>repeat:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#repeat,Rule,int">glossolalia_v1 : repeat(R: Rule; min: int): Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#repeat,Rule[N],int">glossolalia : repeat[N](R: Rule[N]; min: int): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia.html#repeat,Rule[N],int,int">glossolalia : repeat[N](R: Rule[N]; min, max: int): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#repeat,Rule,int">glossolalia_v1 : repeat(R: Rule; min: int): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v1.html#repeat,Rule,TSlice[int]">glossolalia_v1 : repeat(R: Rule; slc: TSlice[int]): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v2.html#repeat,Rule,int">glossolalia_v2 : repeat(R: Rule; min: int): Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v2.html#repeat,Rule,int,int">glossolalia_v2 : repeat(R: Rule; min, max: int): Rule</a></li>
@@ -372,13 +398,20 @@ Modules: <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_
           <li><a class="reference external" href="src/glossolalia_v3.html#repeat,Rule[N],int,int">glossolalia_v3 : repeat[N](R: Rule[N]; min, max: int): Rule[N]</a></li>
           </ul></dd>
 <dt><span>Rule:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v1.html#Rule">glossolalia_v1 : Rule</a></li>
+<li><a class="reference external" href="src/glossolalia.html#Rule">glossolalia : Rule</a></li>
+          <li><a class="reference external" href="src/glossolalia_v1.html#Rule">glossolalia_v1 : Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v2.html#Rule">glossolalia_v2 : Rule</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#Rule">glossolalia_v3 : Rule</a></li>
           </ul></dd>
 <dt><span>save:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v3.html#save,Rule[N],proc(seq[N])">glossolalia_v3 : save[N](R: Rule[N]; cb: proc (match: seq[N]): N): Rule[N]</a></li>
+<li><a class="reference external" href="src/glossolalia.html#save,Rule[N],proc(cstring,int)">glossolalia : save[N](R: Rule[N]; cb: proc (start: cstring; len: int): N): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia.html#save,Rule[N],proc(seq[N])">glossolalia : save[N](R: Rule[N]; cb: proc (match: seq[N]): N): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia.html#save,Rule[N],proc(string)">glossolalia : save[N](R: Rule[N]; cb: proc (match: string): N): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v3.html#save,Rule[N],proc(seq[N])">glossolalia_v3 : save[N](R: Rule[N]; cb: proc (match: seq[N]): N): Rule[N]</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#save,Rule[N],proc(string)">glossolalia_v3 : save[N](R: Rule[N]; cb: proc (match: string): N): Rule[N]</a></li>
+          </ul></dd>
+<dt><span>saveNodesOrBlank:</span></dt><ul class="simple"><dd>
+<li><a class="reference external" href="src/glossolalia.html#saveNodesOrBlank,Rule[N],proc(seq[N])">glossolalia : saveNodesOrBlank[N](R: Rule[N]; cb: proc (nodes: seq[N]): N): Rule[N]</a></li>
           </ul></dd>
 <dt><span>state:</span></dt><ul class="simple"><dd>
 <li><a class="reference external" href="src/glossolalia_v3.html#state,TInput">glossolalia_v3 : state(input: TInput): string</a></li>
@@ -390,24 +423,31 @@ Modules: <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_
 <li><a class="reference external" href="src/glossolalia_v1.html#stri,string">glossolalia_v1 : stri(s: string): Rule</a></li>
           </ul></dd>
 <dt><span>strMatcher:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v3.html#strMatcher,string">glossolalia_v3 : strMatcher[N](str: string): Rule[N]</a></li>
+<li><a class="reference external" href="src/glossolalia.html#strMatcher,string">glossolalia : strMatcher[N](str: string): Rule[N]</a></li>
+          <li><a class="reference external" href="src/glossolalia_v3.html#strMatcher,string">glossolalia_v3 : strMatcher[N](str: string): Rule[N]</a></li>
           </ul></dd>
 <dt><span>tag:</span></dt><ul class="simple"><dd>
 <li><a class="reference external" href="src/glossolalia_v2.html#tag,Rule,string">glossolalia_v2 : tag(R: Rule; name: string): Rule</a></li>
           </ul></dd>
 <dt><span>TInput:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v3.html#TInput">glossolalia_v3 : TInput</a></li>
+<li><a class="reference external" href="src/glossolalia.html#TInput">glossolalia : TInput</a></li>
+          <li><a class="reference external" href="src/glossolalia_v3.html#TInput">glossolalia_v3 : TInput</a></li>
+          </ul></dd>
+<dt><span>TMatch:</span></dt><ul class="simple"><dd>
+<li><a class="reference external" href="src/glossolalia.html#TMatch">glossolalia : TMatch</a></li>
           </ul></dd>
 <dt><span>TMatcher:</span></dt><ul class="simple"><dd>
 <li><a class="reference external" href="src/glossolalia_v1.html#TMatcher">glossolalia_v1 : TMatcher</a></li>
           <li><a class="reference external" href="src/glossolalia_v2.html#TMatcher">glossolalia_v2 : TMatcher</a></li>
           </ul></dd>
 <dt><span>TMatchKind:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v2.html#TMatchKind">glossolalia_v2 : TMatchKind</a></li>
+<li><a class="reference external" href="src/glossolalia.html#TMatchKind">glossolalia : TMatchKind</a></li>
+          <li><a class="reference external" href="src/glossolalia_v2.html#TMatchKind">glossolalia_v2 : TMatchKind</a></li>
           <li><a class="reference external" href="src/glossolalia_v3.html#TMatchKind">glossolalia_v3 : TMatchKind</a></li>
           </ul></dd>
 <dt><span>TMatchResult:</span></dt><ul class="simple"><dd>
-<li><a class="reference external" href="src/glossolalia_v3.html#TMatchResult">glossolalia_v3 : TMatchResult</a></li>
+<li><a class="reference external" href="src/glossolalia.html#TMatchResult">glossolalia : TMatchResult</a></li>
+          <li><a class="reference external" href="src/glossolalia_v3.html#TMatchResult">glossolalia_v3 : TMatchResult</a></li>
           </ul></dd>
 <dt><span>TPositiveMatch:</span></dt><ul class="simple"><dd>
 <li><a class="reference external" href="src/glossolalia_v3.html#TPositiveMatch">glossolalia_v3 : TPositiveMatch</a></li>
@@ -416,7 +456,7 @@ Modules: <a href="glossolalia_v1.html">glossolalia_v1</a>, <a href="glossolalia_
 <li><a class="reference external" href="src/glossolalia_v3.html#wdd.t,stmt">glossolalia_v3 : wdd(body: stmt): stmt</a></li>
           </ul></dd>
 
-<small>Generated: 2014-07-05 21:34:31 UTC</small>
+<small>Generated: 2014-07-05 21:56:32 UTC</small>
 </div>
 </body>
 </html>
