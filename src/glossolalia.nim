@@ -5,7 +5,7 @@
 ##   Optimization: capture position and length instead of allocating
 ##     new strings. Now, allocations only happen on a save() or at
 ##     the end, if no nodes are consumed. 
-##   & and | changed to `and` and `or`, the precedence works better
+##   `&` and `|` changed to `and` and `or`, the precedence works better
 ##
 ## Revision 3
 ##   Rules are generic, they match to a generic AST node.
@@ -18,7 +18,7 @@
 ## Revision 1
 ##   Rules return strings.
 ##   Operators implemented:
-##     combination &, |, *, +, ? 
+##     combination `&`, `|`, `*`, `+`, `?`
 ##   Basic matchers
 ##     str(), chr() 
 ##
