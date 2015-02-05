@@ -48,16 +48,16 @@ type
   Rule* [N] = ref object
     m: proc(input:var TInput): TMatchResult[N]
 
-template matchf (body:stmt):expr{.immediate.}=
+template matchf (body:stmt):expr{.immediate,dirty.}=
   (proc(input: var TInput): TMatchResult[N] =
     body)
 
 proc currentChar* (I:TInput):char = I.str[I.pos]
 
-template chrMatcher (chars): expr =
-  (matchf do:
+template chrMatcher (N, chars): expr {.immediate.} =
+  (proc (input: var TInput): TMatchResult[N] =
     if input.currentChar in chars:
-      result = just(TMatch[N](
+      result = Just(TMatch[N](
         kind: mUnrefined, 
         pos: input.pos, 
         len: 1
@@ -67,24 +67,24 @@ template chrMatcher (chars): expr =
 proc charMatcher* [N] (chrs: set[char]): Rule[N] =
   Rule[N](m: matchf do:
     if input.currentChar in chrs:
-      result = just(TMatch[N](
+      result = Just(TMatch[N](
         kind: mUnrefined, 
         pos: input.pos, 
         len: 1
       ))
-      input.pos.inc)
+      input.pos.inc
+  )
 
 proc charMatcher* [N] (chrs: varargs[char]): Rule[N] =
   let chrs = @chrs
-  Rule[N](
-    m: matchf do:
-      if input.currentChar in chrs:
-        result = just(TMatch[N](
-          kind: mUnrefined, 
-          pos: input.pos, 
-          len: 1
-        ))
-        input.pos.inc
+  return Rule[N](m: matchf do:
+    if input.currentChar in chrs:
+      result = Just(TMatch[N](
+        kind: mUnrefined, 
+        pos: input.pos, 
+        len: 1
+      ))
+      input.pos.inc
   )
 
 proc strMatcher* [N] (str: string): Rule[N] =
@@ -92,7 +92,7 @@ proc strMatcher* [N] (str: string): Rule[N] =
   Rule[N](
     m: matchf do:
       if input.str.continuesWith(str, input.pos):
-        result = just(tmatch[n](
+        result = Just(TMatch[N](
           kind: mUnrefined,
           pos: input.pos,
           len: str.len
@@ -110,14 +110,14 @@ proc accumulate [N] (matches: varargs[TMatch[N]]): TMatchResult[N] =
   for it in matches:
     if it.kind == mNodes:
       if result.val.kind != mNodes:
-        result = just(TMatch[N](kind: mNodes, nodes: it.nodes))
+        result = Just(TMatch[N](kind: mNodes, nodes: it.nodes))
         found_nodes = true
       else:
         result.val.nodes.add it.nodes
   if found_nodes: return
 
   #all strings, add up the captures
-  result = just(TMatch[N](kind: mUnrefined, pos: matches[0].pos))
+  result = Just(TMatch[N](kind: mUnrefined, pos: matches[0].pos))
   var high = result.val.pos + matches[0].len
   for i in 1 .. <len(matches):
     high = max(matches[i].pos + matches[i].len, high)
@@ -140,10 +140,10 @@ proc `or`* [N] (a,b: Rule[N]): Rule[N] =
     m: matchf do:
       let start = input.pos
       if (let (has,m) = a.m(input); has):
-        return just(m)
+        return Just(m)
       input.pos = start
       if (let (has,m) = b.m(input); has):
-        return just(m)
+        return Just(m)
       input.pos = start
   )
 
@@ -154,25 +154,25 @@ proc present* [N] (R:Rule[N]): Rule[N] =
   Rule[N](
     m: matchf do:
       let start = input.pos
-      if r.m(input):
-        result = just(Tmatch[N](kind: mUnrefined, pos: start, len: 0))
+      if R.m(input):
+        result = Just(Tmatch[N](kind: mUnrefined, pos: start, len: 0))
       input.pos = start
   )
 proc absent* [N] (R:Rule[N]): Rule[N] =
   Rule[N](
     m: matchf do:
       let start = input.pos
-      if not r.m(input):
-        result = just(TMatch[N](kind: mUnrefined, pos:start, len:0))
+      if not R.m(input):
+        result = Just(TMatch[N](kind: mUnrefined, pos:start, len:0))
       input.pos = start
   )
 
 
 
-proc good_match [n] (input:TInput; len:int): TMatchResult[N] =
-  just(TMatch[N](kind: mUnrefined, pos: input.pos, len: len))
-proc good_match [n] (nodes: varargs[N]): TMatchResult[N] =
-  just(TMatch[N](kind: mNodes, nodes: @nodes))
+proc good_match [N] (input:TInput; len:int): TMatchResult[N] =
+  Just(TMatch[N](kind: mUnrefined, pos: input.pos, len: len))
+proc good_match [N] (nodes: varargs[N]): TMatchResult[N] =
+  Just(TMatch[N](kind: mNodes, nodes: @nodes))
 
 proc repeat* [N] (R:Rule[N]; min,max:int): Rule[N] =
   Rule[N](
@@ -182,7 +182,7 @@ proc repeat* [N] (R:Rule[N]; min,max:int): Rule[N] =
       var results: seq[TMatch[N]] = @[]
       
       while input.pos < input.len and matches < max:
-        if (let(has,res) = r.m(input); has):
+        if (let(has,res) = R.m(input); has):
           results.add res
           inc matches, 1
           continue
@@ -195,7 +195,7 @@ proc repeat* [N] (R:Rule[N]; min,max:int): Rule[N] =
         if matches > 0:
           result = accumulate(results)
         else:
-          result = good_match[n](input,0)
+          result = good_match[N](input,0)
   )
 
 
@@ -207,7 +207,7 @@ proc repeat* [N] (R:Rule[N]; min:int): Rule[N] =
       var results: seq[TMatch[N]] = @[]
       
       while input.pos < input.len:
-        if (let (has, res) = r.m(input); has):
+        if (let (has, res) = R.m(input); has):
           results.add res
           inc matches
           continue
@@ -220,7 +220,7 @@ proc repeat* [N] (R:Rule[N]; min:int): Rule[N] =
         if matches > 0:
           result = accumulate(results)
         else:
-          result = good_match[n](input,0)
+          result = good_match[N](input,0)
   )
 proc `+`* [N] (R:Rule[N]): Rule[N] = R.repeat(1)
 proc `*`* [N] (R:Rule[N]): Rule[N] = R.repeat(0)
@@ -239,9 +239,9 @@ proc save* [N] (R:Rule[N]; cb: proc(match:string): N): Rule[N] =
   # use it to catch butterflies!
   Rule[N](
     m: matchf do:
-      result = r.m(input)
+      result = R.m(input)
       if result.has and result.val.kind == mUnrefined:
-        result = good_match[n](
+        result = good_match[N](
           cb(input.str.substr(result.val.pos, result.val.high_pos))
         )
   )
@@ -249,14 +249,14 @@ proc save* [N] (R:Rule[N]; cb: proc(match: seq[N]): N): Rule[N] =
   # save a sequence of nodes as a node
   Rule[N](
     m: matchf do:
-      result = r.m(input)
+      result = R.m(input)
       if result.has and result.val.kind == mNodes:
-        result = good_match[n](cb(result.val.nodes))
+        result = good_match[N](cb(result.val.nodes))
   )
 
 proc maybe_match [N] (node: N): TMatchResult[N] =
-  if maybe node:
-    return good_match[n](node)
+  if Maybe node:
+    return good_match[N](node)
 
 proc save* [N] (R:Rule[N]; cb: proc(start:cstring,len:int):N): Rule[N] =
   Rule[N](
@@ -279,7 +279,7 @@ proc match* [N] (rule:Rule[N]; str:string): TMatchResult[N] =
   if result.has and result.val.kind == mUnrefined:
     echo result
     let high = result.val.len+result.val.pos-1
-    result = just(TMatch[N](
+    result = Just(TMatch[N](
       kind: mString,
       str: input.str.substr(result.val.pos, high)
     ))
@@ -304,10 +304,10 @@ proc newRule* [N] (): Rule [N] =
   Rule[N]()
 
 macro genGrammar(TNode:expr; body:stmt):stmt {.immediate.}=
-  # accepts a list of statements like
+  # accepts a grammar in the form of `rulename := 
   #
-  #   hello := "Hello"
-  #   digits <- many(chr( {'0' .. '9'} ))
+  ##  digit := 
+  #   digits <- repeat(digit, many(chr( {'0' .. '9'} ))
   #
   # you can refer to a rule here before it is defined
   #
@@ -345,6 +345,9 @@ template grammar* (TNode: expr; body: stmt): stmt {.immediate.} =
   proc stri (s: string): Rule[TNode] =
     # case insensitive str
     # probably more efficient to use a regex rule here
+    # example input: "a_b"
+    #         output: chr('a','A') and chr('_') and chr('b','B')
+
     template accum (x): stmt =
       if result.isNil:
         result = x
@@ -352,12 +355,13 @@ template grammar* (TNode: expr; body: stmt): stmt {.immediate.} =
         result = result and x
     
     for character in s.items:
-      if character in strutils.letters:
+      if character in strutils.Letters:
         accum charMatcher[TNode](character.toLower, character.toUpper)
       else:
         accum charMatcher[TNode](character)
+
   proc keyword (s: string): Rule[TNode] = 
-    str(s) and charMatcher[TNode](identChars).absent
+    str(s) and charMatcher[TNode](strutils.IdentChars).absent
   
   genGrammar(TNode, body)
 
