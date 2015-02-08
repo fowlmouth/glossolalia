@@ -1,40 +1,38 @@
 ## example json parser
 ## TODO comply with json standard
 ## (ECMA-404)
-import glossolalia_v3, json
-export json.`$`, PJsonNode, TJsonNodeKind, json.`[]`, json.`[]=`, 
+import glossolalia, json
+export json.`$`, JsonNode, TJsonNodeKind, json.`[]`, json.`[]=`, 
   new_j_array, new_j_bool, new_j_string, new_j_null, new_j_object,
   new_j_int, new_j_float, has_key, pretty, json.`%`,len
 
-type PJsonNodes = seq[PJsonNode]
-
-proc new_j_array* (elems: openarray[pjsonnode]): pjsonnode =
+proc new_j_array* (elems: openarray[JsonNode]): JsonNode =
   new result
-  result.kind = jArray
+  result.kind = JArray
   result.elems= @elems
 
-grammar(PJsonNode):
+grammar(JsonNode):
   value :=
     obj | arr | num | strng | bewl | null
-  document := ?space & value & ?space & present(chr('\0')) # EOF check
+  document := ?space and value and ?space and present(chr('\0')) # EOF check
 
   num :=
     num_float | num_int
   num_float :=    
-    (chr({'0'..'9'}).repeat(1) & chr('.') & chr({'0'..'9'})).save((m:string)->PJsonNode => new_j_float(m.parseFloat))
+    (chr({'0'..'9'}).repeat(1) and chr('.') and chr({'0'..'9'})).save((m:string)->JsonNode => new_j_float(m.parseFloat))
   num_int :=
-    chr({'0'..'9'}).repeat(1).save do (m:string) -> PJsonNode: new_j_int(m.parseInt)
+    (chr({'0'..'9'}).repeat(1).save do (m:string) -> JsonNode: new_j_int(m.parseInt))
   
   bewl :=
-    (str("true") | str("false")).save do (m: string) -> PJsonNode: new_j_bool(parseBool(m))
-  null := str("null").save do(m:string) -> PJsonNode: new_j_null()
+    (str("true") | str("false")).save do (m: string) -> JsonNode: new_j_bool(parseBool(m))
+  null := str("null").save do(m:string) -> JsonNode: new_j_null()
   
   strng := 
-    chr('"') & 
-    (chr('"').absent & chr({char.low..char.high})).repeat(0).save((m:string)->PJsonNode=> new_j_string(m)) &
+    chr('"') and 
+    (chr('"').absent and chr({char.low..char.high})).repeat(0).save((m:string)->JsonNode=> new_j_string(m)) and
     chr('"')
   
-  proc obj_accept (match: seq[PJsonNode]): PJsonNode =
+  proc obj_accept (match: seq[JsonNode]): JsonNode =
     # they come in as [key1,val1, key2,val2, key3,val3]
     var i = 0
     let H = match.len - 1
@@ -44,29 +42,29 @@ grammar(PJsonNode):
       inc i, 2
     
   obj :=
-    chr('{') & ?space &
-    ( join(strng & ?space & colon & ?space & value, ?space & comma & ?space, 0).save(obj_accept) |
-      chr('}').present.save do (m:string)->PJsonNode: new_j_object()
-    ) & 
-    ?space & chr('}')
+    chr('{') and ?space and
+    ( join(strng and ?space and colon and ?space and value, ?space and comma and ?space, 0).save(obj_accept) |
+      chr('}').present.save do (m:string)->JsonNode: new_j_object()
+    ) and 
+    ?space and chr('}')
   arr := 
-    chr('[') & ?space &
-    (? value.join(?space & comma & ?space, 0)).
-      save((match: PJsonNodes) -> PJsonNode => new_j_array(match)).
-      save((match:string) -> PJsonNode => new_j_array()) &
-    ?space & chr(']')
+    chr('[') and ?space and
+    (? value.join(?space and comma and ?space, 0)).
+      save((match:seq[JsonNode]) -> JsonNode => new_j_array(match)).
+      save((match:string) -> JsonNode => new_j_array()) and
+    ?space and chr(']')
 
   space := +chr(' ','\t','\L')
   comma := chr(',')
   colon := chr(':')
 
-proc parseJson* (doc: string): PJsonNode =
+proc parseJson* (doc: string): JsonNode =
   if (let (has,N) = document.match(doc); has):
-    return N
+    return N.nodes[0]
   else:
     raise newException(EInvalidValue, "Failed to parse JSON")
 
-proc parseFile* (file:string): PJsonNode = readFile(file).parseJson
+proc parseFile* (file:string): JsonNode = readFile(file).parseJson
 
 when isMainModule:
   let x = parseJson("""{
@@ -76,6 +74,6 @@ when isMainModule:
     {}, {"x":42,"z":9}
   ]
   }""")
-  echo x
+  echo x.pretty
   
 
