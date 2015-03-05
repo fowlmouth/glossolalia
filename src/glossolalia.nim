@@ -2,6 +2,8 @@
 ## γλωσσολαλία
 ## 
 ## Revision 4
+##   Optimization: while looking ahead, do not call save() callbacks
+##     this will prevent allocations for patterns under present() and absent()
 ##   Optimization: capture position and length instead of allocating
 ##     new strings. Now, allocations only happen on a save() or at
 ##     the end, if no nodes are consumed. 
@@ -33,6 +35,7 @@ type
   TInput* = object
     str*: string
     len*,pos*: int
+    lookingAhead*: bool
   
   TMatchKind* = enum mUnrefined, mString, mNodes
   TMatch*[N] = object
@@ -154,17 +157,23 @@ proc present* [N] (R:Rule[N]): Rule[N] =
   Rule[N](
     m: matchf do:
       let start = input.pos
+      let lookingAhead = input.lookingAhead
+      input.lookingAhead = true
       if R.m(input):
         result = Just(Tmatch[N](kind: mUnrefined, pos: start, len: 0))
       input.pos = start
+      input.lookingAhead = lookingAhead
   )
 proc absent* [N] (R:Rule[N]): Rule[N] =
   Rule[N](
     m: matchf do:
       let start = input.pos
+      let lookingAhead = input.lookingAhead
+      input.lookingAhead = true
       if not R.m(input):
         result = Just(TMatch[N](kind: mUnrefined, pos:start, len:0))
       input.pos = start
+      input.lookingAhead = lookingAhead
   )
 
 
@@ -240,7 +249,7 @@ proc save* [N] (R:Rule[N]; cb: proc(match:string): N): Rule[N] =
   Rule[N](
     m: matchf do:
       result = R.m(input)
-      if result.has and result.val.kind == mUnrefined:
+      if result.has and result.val.kind == mUnrefined and not input.lookingAhead:
         result = good_match[N](
           cb(input.str.substr(result.val.pos, result.val.high_pos))
         )
@@ -262,7 +271,7 @@ proc save* [N] (R:Rule[N]; cb: proc(start:cstring,len:int):N): Rule[N] =
   Rule[N](
     m: matchf do:
       result = R.m(input)
-      if result.has and result.val.kind == mUnrefined:
+      if result.has and result.val.kind == mUnrefined and not input.lookingAhead:
         # extra safety guard, TODO put this in other save() funcs
         result = maybe_match(
           cb(input.str[result.val.pos].addr, result.val.len)
