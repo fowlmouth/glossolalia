@@ -25,11 +25,11 @@
 ##     str(), chr() 
 ##
 import 
-  strutils, future,
-  fowltek/maybe_t
+  strutils, future
+#  fowltek/maybe_t
 export
-  strutils, future,
-  maybe_t
+  strutils, future
+#  maybe_t
 
 type
   TInput* = object
@@ -37,9 +37,11 @@ type
     len*,pos*: int
     lookingAhead*: bool
   
-  TMatchKind* = enum mUnrefined, mString, mNodes
-  TMatch*[N] = object
+  TMatchKind* = enum mNope, mUnrefined, mString, mNodes
+  Match*[N] = object
     case kind*: TMatchKind
+    of mNope:
+      nil
     of mUnrefined:
       pos*, len*: int
     of mString:
@@ -47,9 +49,14 @@ type
     of mNodes:
       nodes*: seq[N]
 
-  TMatchResult* [N] = TMaybe[TMatch[N]]
+  TMatchResult* [N] = Match[N] #TMaybe[TMatch[N]]
   Rule* [N] = ref object
     m: proc(input:var TInput): TMatchResult[N]
+
+{.deprecated: [TMatch: Match]}
+
+converter toBool* (some: Match): bool = 
+  some.kind != mNope
 
 template matchf (body:stmt):expr{.immediate,dirty.}=
   (proc(input: var TInput): TMatchResult[N] =
@@ -60,21 +67,21 @@ proc currentChar* (I:TInput):char = I.str[I.pos]
 template chrMatcher (N, chars): expr {.immediate.} =
   (proc (input: var TInput): TMatchResult[N] =
     if input.currentChar in chars:
-      result = Just(TMatch[N](
+      result = TMatch[N](
         kind: mUnrefined, 
         pos: input.pos, 
         len: 1
-      ))
+      )
       input.pos.inc)
 
 proc charMatcher* [N] (chrs: set[char]): Rule[N] =
   Rule[N](m: matchf do:
     if input.currentChar in chrs:
-      result = Just(TMatch[N](
+      result = TMatch[N](
         kind: mUnrefined, 
         pos: input.pos, 
         len: 1
-      ))
+      )
       input.pos.inc
   )
 
@@ -82,11 +89,11 @@ proc charMatcher* [N] (chrs: varargs[char]): Rule[N] =
   let chrs = @chrs
   return Rule[N](m: matchf do:
     if input.currentChar in chrs:
-      result = Just(TMatch[N](
+      result = TMatch[N](
         kind: mUnrefined, 
         pos: input.pos, 
         len: 1
-      ))
+      )
       input.pos.inc
   )
 
@@ -95,11 +102,11 @@ proc strMatcher* [N] (str: string): Rule[N] =
   Rule[N](
     m: matchf do:
       if input.str.continuesWith(str, input.pos):
-        result = Just(TMatch[N](
+        result = TMatch[N](
           kind: mUnrefined,
           pos: input.pos,
           len: str.len
-        ))
+        )
         input.pos.inc str.len 
   )
 
@@ -112,27 +119,27 @@ proc accumulate [N] (matches: varargs[TMatch[N]]): TMatchResult[N] =
   var found_nodes = false
   for it in matches:
     if it.kind == mNodes:
-      if result.val.kind != mNodes:
-        result = Just(TMatch[N](kind: mNodes, nodes: it.nodes))
+      if result.kind != mNodes:
+        result = TMatch[N](kind: mNodes, nodes: it.nodes)
         found_nodes = true
       else:
-        result.val.nodes.add it.nodes
+        result.nodes.add it.nodes
   if found_nodes: return
 
   #all strings, add up the captures
-  result = Just(TMatch[N](kind: mUnrefined, pos: matches[0].pos))
-  var high = result.val.pos + matches[0].len
+  result = TMatch[N](kind: mUnrefined, pos: matches[0].pos)
+  var high = result.pos + matches[0].len
   for i in 1 .. <len(matches):
     high = max(matches[i].pos + matches[i].len, high)
-  result.val.len = high - result.val.pos
+  result.len = high - result.pos
 
 
 proc `and`* [N] (a,b: Rule[N]): Rule[N] =
   Rule[N](
     m: matchf do:
       let start = input.pos
-      if (let (has,m1) = a.m(input); has):
-        if (let (has,m2) = b.m(input); has):
+      if (let m1 = a.m(input); m1):
+        if (let m2 = b.m(input); m2):
           result = accumulate(m1, m2)
           return
       input.pos = start
@@ -142,11 +149,15 @@ proc `or`* [N] (a,b: Rule[N]): Rule[N] =
   Rule[N](
     m: matchf do:
       let start = input.pos
-      if (let (has,m) = a.m(input); has):
-        return Just(m)
+      
+      result = a.m(input)
+      if result: return
+
       input.pos = start
-      if (let (has,m) = b.m(input); has):
-        return Just(m)
+      
+      result = b.m(input)
+      if result: return
+
       input.pos = start
   )
 
@@ -160,7 +171,7 @@ proc present* [N] (R:Rule[N]): Rule[N] =
       let lookingAhead = input.lookingAhead
       input.lookingAhead = true
       if R.m(input):
-        result = Just(Tmatch[N](kind: mUnrefined, pos: start, len: 0))
+        result = TMatch[N](kind: mUnrefined, pos: start, len: 0)
       input.pos = start
       input.lookingAhead = lookingAhead
   )
@@ -171,7 +182,7 @@ proc absent* [N] (R:Rule[N]): Rule[N] =
       let lookingAhead = input.lookingAhead
       input.lookingAhead = true
       if not R.m(input):
-        result = Just(TMatch[N](kind: mUnrefined, pos:start, len:0))
+        result = TMatch[N](kind: mUnrefined, pos:start, len:0)
       input.pos = start
       input.lookingAhead = lookingAhead
   )
@@ -179,9 +190,9 @@ proc absent* [N] (R:Rule[N]): Rule[N] =
 
 
 proc good_match [N] (input:TInput; len:int): TMatchResult[N] =
-  Just(TMatch[N](kind: mUnrefined, pos: input.pos, len: len))
+  TMatch[N](kind: mUnrefined, pos: input.pos, len: len)
 proc good_match [N] (nodes: varargs[N]): TMatchResult[N] =
-  Just(TMatch[N](kind: mNodes, nodes: @nodes))
+  TMatch[N](kind: mNodes, nodes: @nodes)
 
 proc repeat* [N] (R:Rule[N]; min,max:int): Rule[N] =
   Rule[N](
@@ -191,8 +202,8 @@ proc repeat* [N] (R:Rule[N]; min,max:int): Rule[N] =
       var results: seq[TMatch[N]] = @[]
       
       while input.pos < input.len and matches < max:
-        if (let(has,res) = R.m(input); has):
-          results.add res
+        if (let match = R.m(input); match):
+          results.add match
           inc matches, 1
           continue
         break
@@ -216,8 +227,8 @@ proc repeat* [N] (R:Rule[N]; min:int): Rule[N] =
       var results: seq[TMatch[N]] = @[]
       
       while input.pos < input.len:
-        if (let (has, res) = R.m(input); has):
-          results.add res
+        if (let match = R.m(input); match):
+          results.add match
           inc matches
           continue
         break
@@ -249,9 +260,9 @@ proc save* [N] (R:Rule[N]; cb: proc(match:string): N): Rule[N] =
   Rule[N](
     m: matchf do:
       result = R.m(input)
-      if result.has and result.val.kind == mUnrefined and not input.lookingAhead:
+      if result and result.kind == mUnrefined and not input.lookingAhead:
         result = good_match[N](
-          cb(input.str.substr(result.val.pos, result.val.high_pos))
+          cb(input.str.substr(result.pos, result.high_pos))
         )
   )
 proc save* [N] (R:Rule[N]; cb: proc(match: seq[N]): N): Rule[N] =
@@ -259,39 +270,46 @@ proc save* [N] (R:Rule[N]; cb: proc(match: seq[N]): N): Rule[N] =
   Rule[N](
     m: matchf do:
       result = R.m(input)
-      if result.has and result.val.kind == mNodes:
-        result = good_match[N](cb(result.val.nodes))
+      if result and result.kind == mNodes:
+        result = good_match[N](cb(result.nodes))
   )
-
-proc maybe_match [N] (node: N): TMatchResult[N] =
-  if Maybe node:
-    return good_match[N](node)
 
 proc save* [N] (R:Rule[N]; cb: proc(start:cstring,len:int):N): Rule[N] =
   Rule[N](
     m: matchf do:
       result = R.m(input)
-      if result.has and result.val.kind == mUnrefined and not input.lookingAhead:
-        # extra safety guard, TODO put this in other save() funcs
-        result = maybe_match(
-          cb(input.str[result.val.pos].addr, result.val.len)
+      if result and result.kind == mUnrefined and not input.lookingAhead:
+        result = good_match(
+          cb(input.str[result.pos].addr, result.len)
         )
   )
-proc saveNodesOrBlank* [N] (R:Rule[N]; cb: proc(nodes:seq[N]):N): Rule[N] = 
-  R.save(cb).save do (start:cstring,len:int)->N:
-    if len == 0:return cb(@[])
 
+proc saveBlank* [N] (R:Rule[N]; cb:proc():N): Rule[N] =
+  Rule[N](
+    m: matchf do:
+      result = R.m(input)
+      if result.kind == mUnrefined and result.len == 0 and not input.lookingAhead:
+        result = good_match(cb())
+  )
+# R.save do (start:cstring,len:int)->N: 
+#   if len == 0:
+#     result = cb()
+#   else:
+#     echo len
+
+proc saveNodesOrBlank* [N] (R:Rule[N]; cb: proc(nodes:seq[N]):N): Rule[N] = 
+  R.save(cb).saveBlank do -> N:
+    result = cb(@[])
 
 proc match* [N] (rule:Rule[N]; str:string): TMatchResult[N] =
   var input = TInput(str: str, pos: 0, len: str.len)
   result = rule.m(input)
-  if result.has and result.val.kind == mUnrefined:
-    echo result
-    let high = result.val.len+result.val.pos-1
-    result = Just(TMatch[N](
+  if result and result.kind == mUnrefined:
+    let high = result.len+result.pos-1
+    result = TMatch[N](
       kind: mString,
-      str: input.str.substr(result.val.pos, high)
-    ))
+      str: input.str.substr(result.pos, high)
+    )
 
 
 
