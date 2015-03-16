@@ -71,7 +71,7 @@ proc currentChar* (I:InputState):char = I.str[I.pos]
 template chrMatcher (N, chars): expr {.immediate.} =
   (proc (input: var InputState): Match[N] =
     if input.currentChar in chars:
-      result = TMatch[N](
+      result = Match[N](
         kind: mUnrefined, 
         pos: input.pos, 
         len: 1
@@ -81,7 +81,7 @@ template chrMatcher (N, chars): expr {.immediate.} =
 proc charMatcher* [N] (chrs: set[char]): Rule[N] =
   Rule[N](m: matchf do:
     if input.currentChar in chrs:
-      result = TMatch[N](
+      result = Match[N](
         kind: mUnrefined, 
         pos: input.pos, 
         len: 1
@@ -93,7 +93,7 @@ proc charMatcher* [N] (chrs: varargs[char]): Rule[N] =
   let chrs = @chrs
   return Rule[N](m: matchf do:
     if input.currentChar in chrs:
-      result = TMatch[N](
+      result = Match[N](
         kind: mUnrefined, 
         pos: input.pos, 
         len: 1
@@ -106,7 +106,7 @@ proc strMatcher* [N] (str: string): Rule[N] =
   Rule[N](
     m: matchf do:
       if input.str.continuesWith(str, input.pos):
-        result = TMatch[N](
+        result = Match[N](
           kind: mUnrefined,
           pos: input.pos,
           len: str.len
@@ -114,7 +114,7 @@ proc strMatcher* [N] (str: string): Rule[N] =
         input.pos.inc str.len 
   )
 
-proc accumulate [N] (matches: varargs[TMatch[N]]): Match[N] =
+proc accumulate [N] (matches: varargs[Match[N]]): Match[N] =
   # saves positive matches by joining arrays of 
   # saved AST nodes or concatenating raw strings 
   assert matches.len > 0
@@ -124,14 +124,14 @@ proc accumulate [N] (matches: varargs[TMatch[N]]): Match[N] =
   for it in matches:
     if it.kind == mNodes:
       if result.kind != mNodes:
-        result = TMatch[N](kind: mNodes, nodes: it.nodes)
+        result = Match[N](kind: mNodes, nodes: it.nodes)
         found_nodes = true
       else:
         result.nodes.add it.nodes
   if found_nodes: return
 
   #all strings, add up the captures
-  result = TMatch[N](kind: mUnrefined, pos: matches[0].pos)
+  result = Match[N](kind: mUnrefined, pos: matches[0].pos)
   var high = result.pos + matches[0].len
   for i in 1 .. <len(matches):
     high = max(matches[i].pos + matches[i].len, high)
@@ -175,7 +175,7 @@ proc present* [N] (R:Rule[N]): Rule[N] =
       let lookingAhead = input.lookingAhead
       input.lookingAhead = true
       if R.m(input):
-        result = TMatch[N](kind: mUnrefined, pos: start, len: 0)
+        result = Match[N](kind: mUnrefined, pos: start, len: 0)
       input.pos = start
       input.lookingAhead = lookingAhead
   )
@@ -186,7 +186,7 @@ proc absent* [N] (R:Rule[N]): Rule[N] =
       let lookingAhead = input.lookingAhead
       input.lookingAhead = true
       if not R.m(input):
-        result = TMatch[N](kind: mUnrefined, pos:start, len:0)
+        result = Match[N](kind: mUnrefined, pos:start, len:0)
       input.pos = start
       input.lookingAhead = lookingAhead
   )
@@ -194,16 +194,16 @@ proc absent* [N] (R:Rule[N]): Rule[N] =
 
 
 proc good_match [N] (input:InputState; len:int): Match[N] =
-  TMatch[N](kind: mUnrefined, pos: input.pos, len: len)
+  Match[N](kind: mUnrefined, pos: input.pos, len: len)
 proc good_match [N] (nodes: varargs[N]): Match[N] =
-  TMatch[N](kind: mNodes, nodes: @nodes)
+  Match[N](kind: mNodes, nodes: @nodes)
 
 proc repeat* [N] (R:Rule[N]; min,max:int): Rule[N] =
   Rule[N](
     m: matchf do:
       var matches = 0
       let startPos = input.pos
-      var results: seq[TMatch[N]] = @[]
+      var results: seq[Match[N]] = @[]
       
       while input.pos < input.len and matches < max:
         if (let match = R.m(input); match):
@@ -228,7 +228,7 @@ proc repeat* [N] (R:Rule[N]; min:int): Rule[N] =
     m: matchf do:
       var matches = 0
       let startPos = input.pos
-      var results: seq[TMatch[N]] = @[]
+      var results: seq[Match[N]] = @[]
       
       while input.pos < input.len:
         if (let match = R.m(input); match):
@@ -256,7 +256,7 @@ proc join* [N] (r, on: Rule[N]; min,max = 0): Rule[N] =
   #  `max` may be 0 to match forever
   r & (if max > 0: (on & r).repeat(min,max) else: (on & r).repeat(min))
 
-proc high_pos* [N] (match: TMatch[N]): int = match.pos + match.len - 1
+proc high_pos* [N] (match: Match[N]): int = match.pos + match.len - 1
 
 proc save* [N] (R:Rule[N]; cb: proc(match:string): N): Rule[N] =
   # store a string as an `N`
@@ -310,7 +310,7 @@ proc match* [N] (rule:Rule[N]; str:string): Match[N] =
   result = rule.m(input)
   if result and result.kind == mUnrefined:
     let high = result.len+result.pos-1
-    result = TMatch[N](
+    result = Match[N](
       kind: mString,
       str: input.str.substr(result.pos, high)
     )
