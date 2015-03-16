@@ -32,14 +32,14 @@ export
 #  maybe_t
 
 type
-  TInput* = object
+  InputState* = object
     str*: string
     len*,pos*: int
     lookingAhead*: bool
   
-  TMatchKind* = enum mNope, mUnrefined, mString, mNodes
+  MatchKind* = enum mNope, mUnrefined, mString, mNodes
   Match*[N] = object
-    case kind*: TMatchKind
+    case kind*: MatchKind
     of mNope:
       nil
     of mUnrefined:
@@ -49,23 +49,27 @@ type
     of mNodes:
       nodes*: seq[N]
 
-  TMatchResult* [N] = Match[N] #TMaybe[TMatch[N]]
   Rule* [N] = ref object
-    m: proc(input:var TInput): TMatchResult[N]
+    m: proc(input:var InputState): Match[N]
 
-{.deprecated: [TMatch: Match]}
+{.deprecated: [
+  TMatch: Match,
+  TMatchKind: MatchKind,
+  TInput: InputState,
+  TMatchResult: Match
+]}
 
 converter toBool* (some: Match): bool = 
   some.kind != mNope
 
 template matchf (body:stmt):expr{.immediate,dirty.}=
-  (proc(input: var TInput): TMatchResult[N] =
+  (proc(input: var InputState): Match[N] =
     body)
 
-proc currentChar* (I:TInput):char = I.str[I.pos]
+proc currentChar* (I:InputState):char = I.str[I.pos]
 
 template chrMatcher (N, chars): expr {.immediate.} =
-  (proc (input: var TInput): TMatchResult[N] =
+  (proc (input: var InputState): Match[N] =
     if input.currentChar in chars:
       result = TMatch[N](
         kind: mUnrefined, 
@@ -110,7 +114,7 @@ proc strMatcher* [N] (str: string): Rule[N] =
         input.pos.inc str.len 
   )
 
-proc accumulate [N] (matches: varargs[TMatch[N]]): TMatchResult[N] =
+proc accumulate [N] (matches: varargs[TMatch[N]]): Match[N] =
   # saves positive matches by joining arrays of 
   # saved AST nodes or concatenating raw strings 
   assert matches.len > 0
@@ -189,9 +193,9 @@ proc absent* [N] (R:Rule[N]): Rule[N] =
 
 
 
-proc good_match [N] (input:TInput; len:int): TMatchResult[N] =
+proc good_match [N] (input:InputState; len:int): Match[N] =
   TMatch[N](kind: mUnrefined, pos: input.pos, len: len)
-proc good_match [N] (nodes: varargs[N]): TMatchResult[N] =
+proc good_match [N] (nodes: varargs[N]): Match[N] =
   TMatch[N](kind: mNodes, nodes: @nodes)
 
 proc repeat* [N] (R:Rule[N]; min,max:int): Rule[N] =
@@ -301,8 +305,8 @@ proc saveNodesOrBlank* [N] (R:Rule[N]; cb: proc(nodes:seq[N]):N): Rule[N] =
   R.save(cb).saveBlank do -> N:
     result = cb(@[])
 
-proc match* [N] (rule:Rule[N]; str:string): TMatchResult[N] =
-  var input = TInput(str: str, pos: 0, len: str.len)
+proc match* [N] (rule:Rule[N]; str:string): Match[N] =
+  var input = InputState(str: str, pos: 0, len: str.len)
   result = rule.m(input)
   if result and result.kind == mUnrefined:
     let high = result.len+result.pos-1
@@ -375,17 +379,23 @@ template grammar* (TNode: expr; body: stmt): stmt {.immediate.} =
     # example input: "a_b"
     #         output: chr('a','A') and chr('_') and chr('b','B')
 
-    template accum (x): stmt =
-      if result.isNil:
-        result = x
-      else:
-        result = result and x
+    template m(c): expr = 
+      (if c in strutils.Letters: charMatcher[TNode](c.toLower, c.toUpper) else: charMatcher[TNode](c))
+    result = m(s[0])
+    for i in 1 .. high(s):
+      result = result and m(s[i])
+
+    # template accum (x): stmt =
+    #   if result.isNil:
+    #     result = x
+    #   else:
+    #     result = result and x
     
-    for character in s.items:
-      if character in strutils.Letters:
-        accum charMatcher[TNode](character.toLower, character.toUpper)
-      else:
-        accum charMatcher[TNode](character)
+    # for character in s.items:
+    #   if character in strutils.Letters:
+    #     accum charMatcher[TNode](character.toLower, character.toUpper)
+    #   else:
+    #     accum charMatcher[TNode](character)
 
   proc keyword (s: string): Rule[TNode] = 
     str(s) and charMatcher[TNode](strutils.IdentChars).absent
@@ -414,19 +424,5 @@ when isMainModule:
       echoCode digits.match("12311234")
       echoCode number.match("9001")
       echoCode numbers.match("99 44 11 6")
-      
-  when false:
-    let 
-      char_a = chr('a')
-      char_b = chr('b')
-      
-      ab = char_a and char_b
-      
-      a_pres_b = char_a and present(char_b) and (char_a or char_b)
-      
+      echoCode stri("ballx").match("BAllX")
 
-    echoCode char_a.match("a")
-    echoCode ab.match("ab")
-    echoCode a_pres_b.match("ab")
-
-    echoCode chr('a').absent.match("b")
