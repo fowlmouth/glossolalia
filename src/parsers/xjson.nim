@@ -29,8 +29,10 @@ grammar(JsonNode):
     str("null").save do(m:string) -> JsonNode: new_j_null()
   
   strng := 
-    chr('"') and 
-    ((chr('"').absent and chr({char.low..char.high})).repeat(0).save do (m:string)->JsonNode: new_j_string(m)) and 
+    quote and 
+    ((quote.absent and chr({char.low..char.high})).repeat(0).save do (m:string)->JsonNode: new_j_string(m)) and 
+    quote
+  quote :=
     chr('"')
   
   proc obj_accept (match: seq[JsonNode]): JsonNode =
@@ -75,3 +77,49 @@ when isMainModule:
   ]
   }""")
   echo x.pretty
+
+  template ec (xpr:expr):stmt =
+    echo astToStr(xpr), ": ", $xpr
+  ec strng
+  ec bewl
+  ec num
+
+
+
+  when defined(stresstest):
+    const fname = "big.json"
+    const line = "{\"int\": 1,\"flt\": 2.0,\"b\": false, \"null\":null, \"str\":\"xx\", \"arr\": [1, 2.3, []], \"obj\": {\"x\":42, \"z\":\"foo\"}}"
+    template pow (a,b: static[int]): int =
+      when b == 0: 1
+      else: a * pow(a, b-1)
+    const targetBytes = 10.pow(7)
+    import os, times
+
+    if not fname.fileExists or fname.getFilesize < targetBytes:
+      let x = open(fname, fmWrite)
+      echo "creating big.json"
+      let start = epochTime()
+      x.writeLn "["
+      for i in countup(0, targetBytes, line.len+2):
+        x.write line
+        x.write ",\L"
+      x.writeLn "]"
+      x.close
+      echo "finished in ", epochTime() - start, "s"
+
+    when true:
+
+      echo "reading ",fname," (", fname.getFilesize, " bytes)"
+      let doc = readFile(fname)
+
+      echo "parsing big.json"
+      let start = epochTime()
+      #let n = parseJson(doc)
+      let n = (space and value and space).match(doc)
+      echo "good match: ", toBool(n)
+      echo "finished in ", epochTime() - start
+
+    let zz = parseJson("[\L" & line & ",\L" & line & "]\L")
+    echo zz
+
+    echo targetBytes

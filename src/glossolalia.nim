@@ -2,6 +2,9 @@
 ## γλωσσολαλία
 ## 
 ## Revision 4
+##   Added string representation of rules (`$` operator)
+##     save()d nodes are prefixed with their address (0xffff...) and their rule will
+##     only be shown once to prevent recursion.
 ##   Optimization: while looking ahead, do not call save() callbacks
 ##     this will prevent allocations for patterns under present() and absent()
 ##   Optimization: capture position and length instead of allocating
@@ -49,8 +52,11 @@ type
     of mNodes:
       nodes*: seq[N]
 
-  Rule* [N] = ref object
+  RuleToStr* [N] = proc(r: Rule[N]; uniq: var seq[uint]): string
+  Rule* [N] = ref RuleObj[N]
+  RuleObj* [N] = object
     m: proc(input:var InputState): Match[N]
+    to_string: proc(r: Rule[N]; uniq: var seq[uint]): string
 
 {.deprecated: [
   TMatch: Match,
@@ -66,32 +72,102 @@ template matchf (body:stmt):expr{.immediate,dirty.}=
   (proc(input: var InputState): Match[N] =
     body)
 
+proc toHex (r:Rule): string =
+  "0x" & toHex(cast[uint](r).BiggestInt, sizeof(pointer)*2)
+
+from unsigned import `==`
+export unsigned.`==`
+
+template tostrf (body:stmt):expr{.immediate,dirty.} =
+  (proc(r:Rule[N]; uniq: var seq[uint]): string =
+    if cast[uint](r) in uniq: return toHex(r)
+    body)
+
+proc toStr* [N] (r: Rule[N]; uniq: var seq[uint]): string =
+  if r.to_string.isNil: return "???"
+  return r.to_string(r, uniq)
+
+proc `$`* [N] (r: Rule[N]): string =
+  var uniq = newSeq[uint]()
+  result = r.toStr(uniq)
+
 proc currentChar* (I:InputState):char = I.str[I.pos]
 
-template chrMatcher (N, chars): expr {.immediate.} =
-  (proc (input: var InputState): Match[N] =
-    if input.currentChar in chars:
-      result = Match[N](
-        kind: mUnrefined, 
-        pos: input.pos, 
-        len: 1
-      )
-      input.pos.inc)
+# template chrMatcher (N, chars): expr {.immediate.} =
+#   (proc (input: var InputState): Match[N] =
+#     if input.currentChar in chars:
+#       result = Match[N](
+#         kind: mUnrefined, 
+#         pos: input.pos, 
+#         len: 1
+#       )
+#       input.pos.inc)
+
+const printableAscii = {'\32' .. '\126'}
+template printableChar (c:char): string =
+  (if c in printableAscii: $c else: "\\x"& toHex(c.BiggestInt, 2))
+
+proc named* [N] (r: Rule[N]; name: string not nil): Rule[N] =
+  # attaches a name to a rule, useful for nicer rule-to-string?
+  # (tentative)
+  Rule[N](
+    to_string: (tostrf do: result = name),
+    m: (matchf do: result = r.m(input))
+  )
 
 proc charMatcher* [N] (chrs: set[char]): Rule[N] =
-  Rule[N](m: matchf do:
-    if input.currentChar in chrs:
-      result = Match[N](
-        kind: mUnrefined, 
-        pos: input.pos, 
-        len: 1
-      )
-      input.pos.inc
+  Rule[N](
+    to_string: (tostrf do:
+      if chrs.card == 1:
+        result = "'"
+        for c in chrs:
+          result.add printableChar(c)
+        result.add '\''
+        return
+      #im not proud of this
+      result = "["
+      var 
+        cur = '\0'
+        last = '\0'
+        hasLast = false
+      for c in chrs:
+        if c != succ(cur):
+          if hasLast:
+            result.add '-'
+            result.add printableChar(cur)
+          result.add printableChar(c)
+          last = c
+        cur = c
+        hasLast = true
+      if hasLast and last != cur:
+        result.add '-'
+        result.add printableChar(cur)
+      result.add ']'
+      ),
+    m: matchf do:
+      if input.currentChar in chrs:
+        result = Match[N](
+          kind: mUnrefined, 
+          pos: input.pos, 
+          len: 1
+        )
+        input.pos.inc
   )
 
 proc charMatcher* [N] (chrs: varargs[char]): Rule[N] =
   let chrs = @chrs
-  return Rule[N](m: matchf do:
+  return Rule[N](
+    to_string: (tostrf do:
+      if chrs.len == 1:
+        result = "'"
+        result.add printableChar(chrs[0])
+        result.add '\''
+        return
+
+      result = "["
+      for c in chrs: result.add printableChar(c)
+      result.add ']'),
+    m: matchf do:
     if input.currentChar in chrs:
       result = Match[N](
         kind: mUnrefined, 
@@ -104,6 +180,11 @@ proc charMatcher* [N] (chrs: varargs[char]): Rule[N] =
 proc strMatcher* [N] (str: string): Rule[N] =
   # Matches a string, case sensitive
   Rule[N](
+    to_string: (tostrf do:
+      result = "'"
+      for c in items(str): result.add printableChar(c)
+      #result.add str
+      result.add '\''),
     m: matchf do:
       if input.str.continuesWith(str, input.pos):
         result = Match[N](
@@ -140,6 +221,9 @@ proc accumulate [N] (matches: varargs[Match[N]]): Match[N] =
 
 proc `and`* [N] (a,b: Rule[N]): Rule[N] =
   Rule[N](
+    to_string: (tostrf do:
+      result = toStr(a,uniq) & ' ' & toStr(b, uniq)
+      ),
     m: matchf do:
       let start = input.pos
       if (let m1 = a.m(input); m1):
@@ -151,6 +235,12 @@ proc `and`* [N] (a,b: Rule[N]): Rule[N] =
 
 proc `or`* [N] (a,b: Rule[N]): Rule[N] =
   Rule[N](
+    to_string: (tostrf do:
+      result = "("
+      result.add toStr(a, uniq)
+      result.add " | "
+      result.add toStr(b, uniq)
+      result.add ')'),
     m: matchf do:
       let start = input.pos
       
@@ -170,6 +260,10 @@ proc `|` * [N] (a,b:Rule[N]): Rule[N] {.inline.} = a or b
 
 proc present* [N] (R:Rule[N]): Rule[N] =
   Rule[N](
+    to_string: (tostrf do:
+      result = "&"
+      result.add toStr(R, uniq)
+    ),
     m: matchf do:
       let start = input.pos
       let lookingAhead = input.lookingAhead
@@ -181,6 +275,10 @@ proc present* [N] (R:Rule[N]): Rule[N] =
   )
 proc absent* [N] (R:Rule[N]): Rule[N] =
   Rule[N](
+    to_string: (tostrf do:
+      result = "!"
+      result.add toStr(R, uniq)
+    ),
     m: matchf do:
       let start = input.pos
       let lookingAhead = input.lookingAhead
@@ -200,6 +298,14 @@ proc good_match [N] (nodes: varargs[N]): Match[N] =
 
 proc repeat* [N] (R:Rule[N]; min,max:int): Rule[N] =
   Rule[N](
+    to_string: (tostrf do:
+      result = "("
+      result.add toStr(R, uniq)
+      result.add "){"
+      result.add($min)
+      result.add ','
+      result.add($max)
+      result.add '}'),
     m: matchf do:
       var matches = 0
       let startPos = input.pos
@@ -225,6 +331,12 @@ proc repeat* [N] (R:Rule[N]; min,max:int): Rule[N] =
 
 proc repeat* [N] (R:Rule[N]; min:int): Rule[N] =
   Rule[N](
+    to_string: (tostrf do:
+      result = "("
+      result.add toStr(R, uniq)
+      result.add "){"
+      result.add($min)
+      result.add '}'),
     m: matchf do:
       var matches = 0
       let startPos = input.pos
@@ -258,10 +370,19 @@ proc join* [N] (r, on: Rule[N]; min,max = 0): Rule[N] =
 
 proc high_pos* [N] (match: Match[N]): int = match.pos + match.len - 1
 
+proc save_tostr [N] (rule: Rule[N]): RuleToStr[N] =
+  return (tostrf do:
+    uniq.add cast[uint](r)
+    result = toHex(r)
+    result.add ":("
+    result.add tostr(rule, uniq)
+    result.add ')')
+
 proc save* [N] (R:Rule[N]; cb: proc(match:string): N): Rule[N] =
   # store a string as an `N`
   # use it to catch butterflies!
   Rule[N](
+    to_string: save_tostr[N](R),
     m: matchf do:
       result = R.m(input)
       if result and result.kind == mUnrefined and not input.lookingAhead:
@@ -272,6 +393,7 @@ proc save* [N] (R:Rule[N]; cb: proc(match:string): N): Rule[N] =
 proc save* [N] (R:Rule[N]; cb: proc(match: seq[N]): N): Rule[N] =
   # save a sequence of nodes as a node
   Rule[N](
+    to_string: save_tostr[N](R),
     m: matchf do:
       result = R.m(input)
       if result and result.kind == mNodes:
@@ -280,6 +402,7 @@ proc save* [N] (R:Rule[N]; cb: proc(match: seq[N]): N): Rule[N] =
 
 proc save* [N] (R:Rule[N]; cb: proc(start:cstring,len:int):N): Rule[N] =
   Rule[N](
+    to_string: save_tostr[N](R),
     m: matchf do:
       result = R.m(input)
       if result and result.kind == mUnrefined and not input.lookingAhead:
@@ -290,6 +413,7 @@ proc save* [N] (R:Rule[N]; cb: proc(start:cstring,len:int):N): Rule[N] =
 
 proc saveBlank* [N] (R:Rule[N]; cb:proc():N): Rule[N] =
   Rule[N](
+    to_string: save_tostr[N](R),
     m: matchf do:
       result = R.m(input)
       if result.kind == mUnrefined and result.len == 0 and not input.lookingAhead:
@@ -327,6 +451,7 @@ proc `:=`* [N] (a, b: Rule[N]) =
   # you can use this to refer to rules before 
   # they're initialized.
   a.m       = b.m
+  a.to_string = b.to_string
   discard """ a.tos     = b.tos
   a.tos_alt = b.tos_alt """
 proc newRule* [N] (): Rule [N] =
