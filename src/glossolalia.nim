@@ -39,6 +39,7 @@ type
     str*: string
     len*,pos*: int
     lookingAhead*: bool
+    newlines*: seq[int]
   
   MatchKind* = enum mNope, mUnrefined, mString, mNodes
   Match*[N] = object
@@ -55,8 +56,8 @@ type
   RuleToStr* [N] = proc(r: Rule[N]; uniq: var seq[uint]): string
   Rule* [N] = ref RuleObj[N]
   RuleObj* [N] = object
-    m: proc(input:var InputState): Match[N]
-    to_string: proc(r: Rule[N]; uniq: var seq[uint]): string
+    m*: proc(input:var InputState): Match[N]
+    to_string*: proc(r: Rule[N]; uniq: var seq[uint]): string
 
 {.deprecated: [
   TMatch: Match,
@@ -385,18 +386,109 @@ proc save* [N] (R:Rule[N]; cb: proc(match:string): N): Rule[N] =
     to_string: save_tostr[N](R),
     m: matchf do:
       result = R.m(input)
-      if result and result.kind == mUnrefined and not input.lookingAhead:
+      if result.kind == mUnrefined and not input.lookingAhead:
         result = good_match[N](
           cb(input.str.substr(result.pos, result.high_pos))
         )
   )
+
+
+
+
+import macros
+macro echoCode (x:varargs[untyped]): stmt =
+  var call = newCall("echo")
+  let high = len(x)-1
+  for i in 0 .. high:
+    let item = x[i]
+    let code = repr(item)
+    call.add(
+      quote do: `code`,
+      newLit(": "),
+      quote do: `item`
+    )
+    if i < high:
+      call.add newLit ", "
+  
+  if len(call) > 1:
+    return call
+
+
+type MatchLocation* = object
+  line*, col*: int
+  index*: int
+
+proc binarySearch [T] (a: openArray[T], key: T): int =
+  ## binary search for `key` in `a`. Returns insertion index.
+  ## adapted from nim stdlib algorithm module
+  var b = len(a)
+  while result < b:
+    var mid = (result + b) div 2
+    if a[mid] < key: result = mid + 1
+    else: b = mid
+  if result >= len(a): result = -1
+
+
+proc findLineCol (input:InputState; index:int): MatchLocation =
+  result.index = index
+
+  if input.newlines.len == 0:
+    # no newlines edgecase
+    result.line = 0
+    result.col = index
+    return
+
+  var line = input.newlines.binarySearch(index)
+  echoCode index, line, input.newlines
+
+  if line == -1: line = <len(input.newlines)
+  let line_index = 
+    if line == 0: 0
+    else: input.newlines[<line]
+  
+  stdout.write "  "
+  echoCode line_index
+
+  result.line = line
+  result.col = index - line_index
+
+proc loc* (input:var InputState; index:int): MatchLocation =
+  if input.newlines.isNil:
+    input.newlines = newseq[int]()
+    var i = 0
+    while i < len(input.str):
+      if input.str[i] == '\L':
+        input.newlines.add i
+      elif input.str[i] == '\r' and input.str[i+1] == '\L':
+        input.newlines.add i
+        inc i, 1
+      inc i,1
+
+  result = input.findLineCol index
+
+
+
+proc save* [N] (R:Rule[N]; cb: proc(match:string; startLoc,endLoc:MatchLocation): N): Rule[N] =
+  Rule[N](
+    to_string: save_tostr[N](R),
+    m: matchf do:
+      result = R.m(input)
+      if result.kind == mUnrefined and not input.lookingAhead:
+        let n = cb(
+          input.str.substr(result.pos, result.high_pos),
+          input.loc(result.pos),
+          input.loc(result.high_pos+1)
+        )
+        result = Match[N](kind: mNodes, nodes: @[n])
+  )
+
 proc save* [N] (R:Rule[N]; cb: proc(match: seq[N]): N): Rule[N] =
   # save a sequence of nodes as a node
   Rule[N](
     to_string: save_tostr[N](R),
     m: matchf do:
       result = R.m(input)
-      if result and result.kind == mNodes:
+      if result.kind == mNodes:
         result = good_match[N](cb(result.nodes))
   )
 
@@ -405,7 +497,7 @@ proc save* [N] (R:Rule[N]; cb: proc(start:cstring,len:int):N): Rule[N] =
     to_string: save_tostr[N](R),
     m: matchf do:
       result = R.m(input)
-      if result and result.kind == mUnrefined and not input.lookingAhead:
+      if result.kind == mUnrefined and not input.lookingAhead:
         result = good_match(
           cb(input.str[result.pos].addr, result.len)
         )
