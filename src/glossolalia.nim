@@ -417,13 +417,14 @@ type MatchLocation* = object
   line*, col*: int
   index*: int
 
-proc binarySearch [T] (a: openArray[T], key: T): int =
+const CrLfMask = 1 shl <(sizeof(int)*8)
+proc binarySearch (a: openArray[int], key: int): int =
   ## binary search for `key` in `a`. Returns insertion index.
   ## adapted from nim stdlib algorithm module
   var b = len(a)
   while result < b:
     var mid = (result + b) div 2
-    if a[mid] < key: result = mid + 1
+    if (a[mid] and not CrLfMask) < key: result = mid + 1
     else: b = mid
   if result >= len(a): result = -1
 
@@ -438,20 +439,23 @@ proc findLineCol (input:InputState; index:int): MatchLocation =
     return
 
   var line = input.newlines.binarySearch(index)
-  echoCode index, line, input.newlines
+  # echoCode index, line, input.newlines
 
   if line == -1: line = len(input.newlines)
-  let line_index = 
-    if line == 0: 0
-    else: input.newlines[<line]
-  let newline_size =
-    case input.str[line_index]
-    of '\r': 2
-    of '\L': 1
-    else: 0
+  var line_index, newline_size: int
+  if line == 0:
+    line_index = 0
+    newline_size = 0
+  else:
+    line_index = input.newlines[<line]
+    if (line_index and CrLfMask) != 0:
+      line_index = line_index and not CrLfMask
+      newline_size = 2
+    else:
+      newline_size = 1
 
-  stdout.write "  "
-  echoCode line_index, newline_size
+  # stdout.write "  "
+  # echoCode line_index, newline_size
 
   result.line = line
   result.col = index - line_index - newline_size
@@ -464,7 +468,7 @@ proc loc* (input:var InputState; index:int): MatchLocation =
       if input.str[i] == '\L':
         input.newlines.add i
       elif input.str[i] == '\r' and input.str[i+1] == '\L':
-        input.newlines.add i
+        input.newlines.add i or CrLfMask
         inc i, 1
       inc i,1
 
@@ -515,11 +519,6 @@ proc saveBlank* [N] (R:Rule[N]; cb:proc():N): Rule[N] =
       if result.kind == mUnrefined and result.len == 0 and not input.lookingAhead:
         result = good_match(cb())
   )
-# R.save do (start:cstring,len:int)->N: 
-#   if len == 0:
-#     result = cb()
-#   else:
-#     echo len
 
 proc saveNodesOrBlank* [N] (R:Rule[N]; cb: proc(nodes:seq[N]):N): Rule[N] = 
   R.save(cb).saveBlank do -> N:

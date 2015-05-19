@@ -13,7 +13,6 @@ grammar(Node):
         if result.kind == mNodes:
           for n in result.nodes:
             echo n
-          echo "____________"
     )
 
   proc saveNode (match:string; locA,locB:MatchLocation): Node =
@@ -32,17 +31,33 @@ grammar(Node):
     ?whitespace
 
 let tests = [
-  "AAABBBCCC",
-  "AAA\LBBB\LCCC",
-  "\LAAA\LBBB\LCCC\L"
+  ("AAABBBCCC", [
+    ((0,0),(0,3)),
+    ((0,3),(0,6)),
+    ((0,6),(0,9))]),
+  ("AAA\LBBB\LCCC", [
+    ((0,0),(0,3)),
+    ((1,0),(1,3)),
+    ((2,0),(2,3))]),
+  ("\LAAA\LBBB\LCCC\L", [
+    ((1,0),(1,3)),
+    ((2,0),(2,3)),
+    ((3,0),(3,3))]),
+  ("\r\LAAA\r\LBBB\r\LCCC\r\L", [
+    ((1,0),(1,3)),
+    ((2,0),(2,3)),
+    ((3,0),(3,3))])
 ]
-for t in tests:
+for test in tests:
+  let (str, indices) = test
+  let m = test_rule.match(str)
+  do_assert m.kind == mNodes
 
-  let m = test_rule.match(t)
-  if m:
-    for x in m.nodes:
-      echo x
-  else:
-    echo "failed to match ", t
-  echo "#######################################"
+  for idx, iset in indices:
+    let n = m.nodes[idx]
+    let locA = n.locA
+    let locB = n.locB
+    do_assert iset[0] == (locA.line,locA.col), "failed locA test $# for #$#".format(iset[0], idx)
+    do_assert iset[1] == (locB.line,locB.col), "failed locB test $# for #$#".format(iset[1], idx)
+  echo "_______"
 
