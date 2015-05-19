@@ -401,10 +401,9 @@ macro echoCode (x:varargs[untyped]): stmt =
   let high = len(x)-1
   for i in 0 .. high:
     let item = x[i]
-    let code = repr(item)
+    let code = repr(item) & ": "
     call.add(
       quote do: `code`,
-      newLit(": "),
       quote do: `item`
     )
     if i < high:
@@ -441,16 +440,21 @@ proc findLineCol (input:InputState; index:int): MatchLocation =
   var line = input.newlines.binarySearch(index)
   echoCode index, line, input.newlines
 
-  if line == -1: line = <len(input.newlines)
+  if line == -1: line = len(input.newlines)
   let line_index = 
     if line == 0: 0
     else: input.newlines[<line]
-  
+  let newline_size =
+    case input.str[line_index]
+    of '\r': 2
+    of '\L': 1
+    else: 0
+
   stdout.write "  "
-  echoCode line_index
+  echoCode line_index, newline_size
 
   result.line = line
-  result.col = index - line_index
+  result.col = index - line_index - newline_size
 
 proc loc* (input:var InputState; index:int): MatchLocation =
   if input.newlines.isNil:
