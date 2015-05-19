@@ -485,7 +485,7 @@ proc save* [N] (R:Rule[N]; cb: proc(match:string; startLoc,endLoc:MatchLocation)
         let n = cb(
           input.str.substr(result.pos, result.high_pos),
           input.loc(result.pos),
-          input.loc(result.high_pos+1)
+          input.loc(result.high_pos)
         )
         result = Match[N](kind: mNodes, nodes: @[n])
   )

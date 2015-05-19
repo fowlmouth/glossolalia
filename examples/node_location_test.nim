@@ -32,21 +32,21 @@ grammar(Node):
 
 let tests = [
   ("AAABBBCCC", [
-    ((0,0),(0,3)),
-    ((0,3),(0,6)),
-    ((0,6),(0,9))]),
+    ((0,0),(0,2)),
+    ((0,3),(0,5)),
+    ((0,6),(0,8))]),
   ("AAA\LBBB\LCCC", [
-    ((0,0),(0,3)),
-    ((1,0),(1,3)),
-    ((2,0),(2,3))]),
+    ((0,0),(0,2)),
+    ((1,0),(1,2)),
+    ((2,0),(2,2))]),
   ("\LAAA\LBBB\LCCC\L", [
-    ((1,0),(1,3)),
-    ((2,0),(2,3)),
-    ((3,0),(3,3))]),
+    ((1,0),(1,2)),
+    ((2,0),(2,2)),
+    ((3,0),(3,2))]),
   ("\r\LAAA\r\LBBB\r\LCCC\r\L", [
-    ((1,0),(1,3)),
-    ((2,0),(2,3)),
-    ((3,0),(3,3))])
+    ((1,0),(1,2)),
+    ((2,0),(2,2)),
+    ((3,0),(3,2))])
 ]
 for test in tests:
   let (str, indices) = test
@@ -57,7 +57,7 @@ for test in tests:
     let n = m.nodes[idx]
     let locA = n.locA
     let locB = n.locB
-    do_assert iset[0] == (locA.line,locA.col), "failed locA test $# for #$#".format(iset[0], idx)
-    do_assert iset[1] == (locB.line,locB.col), "failed locB test $# for #$#".format(iset[1], idx)
+    do_assert iset[0] == (locA.line,locA.col), "failed locA test $# for #$# ($#)".format(iset[0], idx, locA)
+    do_assert iset[1] == (locB.line,locB.col), "failed locB test $# for #$# ($#)".format(iset[1], idx, locB)
   echo "_______"
 
